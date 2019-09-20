@@ -34,6 +34,20 @@ class RedBlackTree
     end
   end
 
+  # 查找
+  def include?(node = self.root, number)
+    if node.key > number && node.left != nil
+      include?(node.left, number)
+    elsif node.key < number && node.right != nil
+      include?(node.right, number)
+    elsif node.key == number
+      return true
+    else
+      return false
+    end
+  end
+
+
   private
   # 因为每个节点和其左右子树都是一个二叉搜索树，所以使用递归的方法对插入的节点的key进行比较。
   # 当完成插入节点，对树进行再平衡。然后递归回退到上一个节点，继续再平衡，直到结束。
@@ -99,3 +113,4 @@ tree.insert(0, "a")
 [1,2,3,4,-1,-2].map { |e| tree.insert(e, "aa")  }
 #中序遍历
 tree.inorder_tree_walk(tree.root)
+p tree.include?(-1)
