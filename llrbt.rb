@@ -57,7 +57,43 @@ class RedBlackTree
     @root.color = :black
   end
 
+  def delete_min
+    if @root.right == nil && @root.left == nil
+      @root = nil
+      return puts "delete root node, then tree is nil"
+    end
+    @root = _delete_min(@root)
+    @root.color = :black
+  end
+
   private
+    def _delete_min(node)
+      if node.left == nil
+        if @length > 0
+          @length -= 1
+        end
+        return nil
+      end
+
+      if !is_red?(node.left) && !is_red?(node.left.left)
+        node = move_red_left(node)
+      end
+
+      node.left = _delete_min(node.left)
+
+      return fix_up(node)
+    end
+
+    def move_red_left(node)
+      flip_color(node)
+      if is_red?(node.right.left)
+        node.right = rotate_right(node.right)
+        node = rotate_left(node)
+        flip_color(node)
+      end
+      return node
+    end
+
     def _delete_max(node)
       # 相当于把双key节点的较大值准备借出。
       if is_red?(node.left)
@@ -80,7 +116,6 @@ class RedBlackTree
       node.right = _delete_max(node.right)
       #删除完后需要，从下向上修复左倾红黑树结构。
       return fix_up(node)
-
     end
 
     def move_red_right(node)
@@ -161,8 +196,8 @@ p tree.include?(-1)
 
 6.times do |x|
   puts "第#{x + 1}删除："
-  tree.delete_max
+  tree.delete_min
   tree.inorder_tree_walk(tree.root)
 end
 puts "删除只有根节点的tree:"
-tree.delete_max
+tree.delete_min
