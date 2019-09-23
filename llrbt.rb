@@ -47,8 +47,52 @@ class RedBlackTree
     end
   end
 
+  def delete_max
+    # 只有root节点的情况：
+    if @root.right == nil && @root.left == nil
+      @root = nil
+      return puts "delete root node, then tree is nil"
+    end
+    @root = _delete_max(@root)
+    @root.color = :black
+  end
 
   private
+    def _delete_max(node)
+      # 相当于把双key节点的较大值准备借出。
+      if is_red?(node.left)
+        node = rotate_right(node)
+      end
+      # 节点的right是nil，则判断为最大节点，返回nil
+      if node.right == nil
+        # 树节点总数减1.
+        if @length > 0
+          @length -= 1
+        end
+        return nil
+      end
+
+      # 重2-3树来看，当前节点的右节点不是双key节点的话，就需要借用了。
+      if !is_red?(node.right) && !is_red?(node.right.left)
+        node = move_red_right(node)
+      end
+      #继续移动到下一层：
+      node.right = _delete_max(node.right)
+      #删除完后需要，从下向上修复左倾红黑树结构。
+      return fix_up(node)
+
+    end
+
+    def move_red_right(node)
+      #借用有2种：即node。left.left是否是红的。
+      flip_color(node)
+      if is_red?(node.left.left)
+        node = rotate_right(node)
+        flip_color(node)
+      end
+      return node
+    end
+
   # 因为每个节点和其左右子树都是一个二叉搜索树，所以使用递归的方法对插入的节点的key进行比较。
   # 当完成插入节点，对树进行再平衡。然后递归回退到上一个节点，继续再平衡，直到结束。
     def _insert(node, key, item)
@@ -68,7 +112,7 @@ class RedBlackTree
 
     #左倾红黑树的三种调整方式：左旋，右旋，上传颜色。
     def fix_up(n)
-      n = rotate_left(n) if is_red?(n.right) && (n.left == nil || n.left.color == :black)
+      n = rotate_left(n) if is_red?(n.right)
       n = rotate_right(n) if is_red?(n.left) && is_red?(n.left.left)
       n = flip_color(n) if is_red?(n.left) && is_red?(n.right)
       return n
@@ -94,10 +138,10 @@ class RedBlackTree
       return n_l
     end
 
-    def flip_color(n)                      # 将红色向上传递
-      n.color = :red              # 将父节点设置为红色
-      n.left.color = :black                # 将左右两个子节点设置为黑色
-      n.right.color = :black
+    def flip_color(n)                      # 将红色向上传递或下降
+      n.color = n.color == :red ? :black : :red
+      n.left.color = n.left.color == :red ? :black : :red
+      n.right.color = n.right.color == :red ? :black : :red
       return n
     end
 
@@ -114,3 +158,11 @@ tree.insert(0, "a")
 #中序遍历
 tree.inorder_tree_walk(tree.root)
 p tree.include?(-1)
+
+6.times do |x|
+  puts "第#{x + 1}删除："
+  tree.delete_max
+  tree.inorder_tree_walk(tree.root)
+end
+puts "删除只有根节点的tree:"
+tree.delete_max
