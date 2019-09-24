@@ -1,6 +1,5 @@
 class Node
-  attr_accessor :item, :color, :left, :right
-  attr_reader :key
+  attr_accessor :item, :color, :left, :right, :key
 
   def initialize(key, item = "enter any data")
     @key = key
@@ -66,7 +65,68 @@ class RedBlackTree
     @root.color = :black
   end
 
+  def delete(k)
+    @root = _delete(@root, k)
+    @root.color = :black
+  end
+
+  def min(node)
+    if node.left != nil
+      min(node.left)
+    else
+      return node
+    end
+  end
+
   private
+
+    def _delete(node, k)
+      if self.root == nil
+        return nil
+      end
+      #删除节点在左子树。left
+      if node.key > k
+        if !is_red?(node.left) && !is_red?(node.left.left)
+          node = move_red_left(node)
+        end
+        node.left = _delete(node.left, k)
+      # 删除节点在右子树。 或是节点本身。
+      else
+        # 类似删除最大值：
+        if is_red?(node.left)
+          node = rotate_right(node)
+        end
+        # 在树底部，找到要删除的节点。删除它，返回nil。
+        if node.right == nil && node.key == k
+          return nil
+        end
+        # 当前节点的右节点不是双key节点的话，就需要借用了。
+        if !is_red?(node.right) && !is_red?(node.right.left)
+          node = move_red_right(node)
+        end
+        # 在树中间层找到要删除的节点。需要转化：
+        # 思考？
+        # 结论：2-3树删除中间层的节点的方法同样适用于这里：
+        # 找到要删除节点x的中序列遍历的后续节点next_node,它一定在底层，交换两者。然后删除x。
+        # 考虑红黑树的代码：
+        # 1.node右子树的最小值即它的后续节点next_node。
+        # 2.把next_node的key和item（即储存的内容）复制给节点x。那么节点x就被替换掉了。相当于x被删除了。
+        # 3.最后删除在底部的重复的后续节点next_node。
+        if node.key == k
+          next_node = min(node.right)
+          node.key = next_node.key
+          # node.item = next_node.item
+          # ⚠️：删除使用私有方法
+          node.right = _delete_min(node.right)
+        else
+        #没有找到要删除节点，则移动到下一层：
+          node.right = _delete(node.right, k)
+        end
+      end
+
+      return fix_up(node)
+    end
+
     def _delete_min(node)
       if node.left == nil
         if @length > 0
@@ -84,16 +144,6 @@ class RedBlackTree
       return fix_up(node)
     end
 
-    def move_red_left(node)
-      flip_color(node)
-      if is_red?(node.right.left)
-        node.right = rotate_right(node.right)
-        node = rotate_left(node)
-        flip_color(node)
-      end
-      return node
-    end
-
     def _delete_max(node)
       # 相当于把双key节点的较大值准备借出。
       if is_red?(node.left)
@@ -108,7 +158,7 @@ class RedBlackTree
         return nil
       end
 
-      # 重2-3树来看，当前节点的右节点不是双key节点的话，就需要借用了。
+      # 从2-3树来看，当前节点的右节点不是双key节点的话，就需要借用了。
       if !is_red?(node.right) && !is_red?(node.right.left)
         node = move_red_right(node)
       end
@@ -116,6 +166,16 @@ class RedBlackTree
       node.right = _delete_max(node.right)
       #删除完后需要，从下向上修复左倾红黑树结构。
       return fix_up(node)
+    end
+
+    def move_red_left(node)
+      flip_color(node)
+      if is_red?(node.right.left)
+        node.right = rotate_right(node.right)
+        node = rotate_left(node)
+        flip_color(node)
+      end
+      return node
     end
 
     def move_red_right(node)
@@ -186,18 +246,31 @@ class RedBlackTree
 end
 
 # 建立一颗树：
-tree = RedBlackTree.new()
-tree.insert(0, "a")
-# 给树插入节点：
-[1,2,3,4,-1,-2].map { |e| tree.insert(e, "aa")  }
-#中序遍历
-tree.inorder_tree_walk(tree.root)
-p tree.include?(-1)
+# tree = RedBlackTree.new()
+# tree.insert(0, "a")
+# # 给树插入节点：
+# [1,2,3,4,-1,-2].map { |e| tree.insert(e, "aa")  }
+# #中序遍历
+# tree.inorder_tree_walk(tree.root)
+# p tree.include?(-1)
+#
+# 6.times do |x|
+#   puts "第#{x + 1}删除："
+#   tree.delete_min
+#   tree.inorder_tree_walk(tree.root)
+# end
+# puts "删除只有根节点的tree:"
+# tree.delete_min
 
-6.times do |x|
-  puts "第#{x + 1}删除："
-  tree.delete_min
-  tree.inorder_tree_walk(tree.root)
-end
-puts "删除只有根节点的tree:"
-tree.delete_min
+tree2 = RedBlackTree.new()
+tree2.insert(0, 'a')
+[1,2,3,4,5,6,7,8,9].map { |e| tree2.insert(e, 'aa')  }
+# 3.times do |x|
+#   puts "第#{x + 1} 次："
+#   tree2.delete_min
+#   tree2.inorder_tree_walk(tree2.root)
+# end
+tree2.inorder_tree_walk(tree2.root)
+tree2.delete(8)
+puts "Tree:"
+tree2.inorder_tree_walk(tree2.root)
